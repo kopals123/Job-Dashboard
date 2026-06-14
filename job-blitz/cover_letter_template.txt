@@ -1,0 +1,18 @@
+[YOUR CUSTOM COVER LETTER TEMPLATE HERE]
+
+Replace this file with your own cover letter template.
+You can use these placeholders that will be filled automatically:
+  {name}       - Your full name from resume
+  {job_title}  - The job title you're applying for
+  {company}    - The company name
+  {top_skills} - Your top 3 skills from resume
+
+Example:
+I am excited to apply for the {job_title} position at {company}. With strong expertise in {top_skills}, I am confident I can contribute meaningfully from day one.
+
+[second paragraph about your experience]
+
+[closing paragraph with call to action]
+
+Best regards,
+{name}

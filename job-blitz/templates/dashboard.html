@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobBlitz — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <a href="/" class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-xs font-bold">J</div>
+          <span class="font-semibold text-white">JobBlitz</span>
+        </a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/api/export-csv" class="text-sm px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Export CSV
+        </a>
+        <a href="/" class="text-sm text-gray-400 hover:text-white transition-colors">Search</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed top-16 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+
+    <div class="mb-8 flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Application Tracker</h1>
+        <p class="text-gray-400 text-sm mt-1">Monitor your job search progress</p>
+      </div>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-500 mb-1">Total Applied</p>
+        <p class="text-3xl font-bold text-white">{{ total }}</p>
+        <p class="text-xs text-gray-600 mt-1">all time</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-500 mb-1">Today</p>
+        <p class="text-3xl font-bold text-violet-400">{{ today_count }}</p>
+        <p class="text-xs text-gray-600 mt-1">/ {{ daily_goal }} goal</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-500 mb-1">Response Rate</p>
+        <p class="text-3xl font-bold {% if response_rate > 10 %}text-green-400{% else %}text-yellow-400{% endif %}">{{ response_rate }}%</p>
+        <p class="text-xs text-gray-600 mt-1">interviews / applied</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-500 mb-1">Interviews</p>
+        <p class="text-3xl font-bold text-green-400">{{ status_map.get('Interview', 0) }}</p>
+        <p class="text-xs text-gray-600 mt-1">scheduled / pending</p>
+      </div>
+    </div>
+
+    <!-- Today's progress bar -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-medium text-gray-300">Today's Progress</span>
+        <span class="text-sm font-bold text-white">{{ today_count }} / {{ daily_goal }}</span>
+      </div>
+      <div class="h-3 bg-gray-800 rounded-full overflow-hidden">
+        {% set pct = [(today_count / daily_goal * 100), 100] | min %}
+        <div class="h-full bg-gradient-to-r from-violet-600 to-indigo-500 rounded-full" style="width: {{ pct }}%"></div>
+      </div>
+      {% if today_count >= daily_goal %}
+      <p class="text-xs text-green-400 mt-2">Goal reached! Keep going or take a break.</p>
+      {% else %}
+      <p class="text-xs text-gray-500 mt-2">{{ daily_goal - today_count }} more to reach your daily goal</p>
+      {% endif %}
+    </div>
+
+    <!-- Status breakdown -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      {% for label, color in [('Applied','violet'), ('Pending','yellow'), ('Interview','green'), ('Rejected','red')] %}
+      <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
+        <span class="text-xs text-gray-400">{{ label }}</span>
+        <span class="text-lg font-bold text-{{ color }}-400">{{ status_map.get(label, 0) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Applications table -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+      <div class="p-5 border-b border-gray-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-200">All Applications</h2>
+        <div class="flex gap-2">
+          <input type="text" id="table-search" placeholder="Search…" onkeyup="filterTable()"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 w-40 transition-colors">
+          <select id="status-filter" onchange="filterTable()"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500 transition-colors">
+            <option value="">All Status</option>
+            <option>Applied</option>
+            <option>Pending</option>
+            <option>Interview</option>
+            <option>Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      {% if applications %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" id="apps-table">
+          <thead>
+            <tr class="border-b border-gray-800 text-xs text-gray-500">
+              <th class="text-left py-3 px-5 font-medium">Company</th>
+              <th class="text-left py-3 px-4 font-medium">Role</th>
+              <th class="text-left py-3 px-4 font-medium">Date</th>
+              <th class="text-left py-3 px-4 font-medium">Source</th>
+              <th class="text-left py-3 px-4 font-medium">Status</th>
+              <th class="text-right py-3 px-5 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for app in applications %}
+            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors app-row" data-status="{{ app.status }}" data-company="{{ app.company }}" data-role="{{ app.role }}">
+              <td class="py-3 px-5 font-medium text-white">{{ app.company or '—' }}</td>
+              <td class="py-3 px-4 text-gray-300 max-w-xs truncate">
+                {% if app.job_url %}
+                <a href="{{ app.job_url }}" target="_blank" class="hover:text-violet-400 transition-colors">{{ app.role }}</a>
+                {% else %}
+                {{ app.role }}
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-gray-500 whitespace-nowrap">{{ app.date_applied }}</td>
+              <td class="py-3 px-4">
+                <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-md">{{ app.source or '—' }}</span>
+              </td>
+              <td class="py-3 px-4">
+                <select onchange="updateStatus({{ app.id }}, this.value)"
+                  class="status-select text-xs px-2 py-1 rounded-lg border-0 focus:outline-none cursor-pointer
+                  {% if app.status == 'Applied' %}bg-violet-600/20 text-violet-400
+                  {% elif app.status == 'Interview' %}bg-green-600/20 text-green-400
+                  {% elif app.status == 'Rejected' %}bg-red-600/20 text-red-400
+                  {% else %}bg-yellow-600/20 text-yellow-400{% endif %}">
+                  {% for s in ['Applied', 'Pending', 'Interview', 'Rejected'] %}
+                  <option value="{{ s }}" {% if app.status == s %}selected{% endif %} class="bg-gray-900 text-white">{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="py-3 px-5 text-right">
+                <button onclick="deleteApp({{ app.id }}, this)" class="text-gray-600 hover:text-red-400 transition-colors p-1 rounded">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center mb-3">
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <p class="text-gray-500 text-sm">No applications yet</p>
+        <a href="/" class="text-xs text-violet-400 hover:text-violet-300 mt-2 transition-colors">Start applying →</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script>
+    function filterTable() {
+      const search = document.getElementById('table-search').value.toLowerCase();
+      const status = document.getElementById('status-filter').value;
+      document.querySelectorAll('.app-row').forEach(row => {
+        const company = row.dataset.company.toLowerCase();
+        const role = row.dataset.role.toLowerCase();
+        const rowStatus = row.dataset.status;
+        const matchSearch = !search || company.includes(search) || role.includes(search);
+        const matchStatus = !status || rowStatus === status;
+        row.style.display = matchSearch && matchStatus ? '' : 'none';
+      });
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        await fetch(`/api/applications/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        showToast(`Status updated to ${status}`, 'success');
+        setTimeout(() => location.reload(), 800);
+      } catch (e) {
+        showToast('Failed to update', 'error');
+      }
+    }
+
+    async function deleteApp(id, btn) {
+      if (!confirm('Delete this application?')) return;
+      const row = btn.closest('tr');
+      try {
+        await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+        row.style.opacity = '0';
+        row.style.transition = 'opacity 0.3s';
+        setTimeout(() => row.remove(), 300);
+        showToast('Application deleted', 'info');
+      } catch (e) {
+        showToast('Failed to delete', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
