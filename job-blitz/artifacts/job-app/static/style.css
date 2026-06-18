@@ -1,0 +1,91 @@
+/* Spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-top-color: rgb(139, 92, 246);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Toast */
+.toast {
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  animation: slideIn 0.2s ease-out;
+  max-width: 340px;
+  border: 1px solid;
+}
+
+.toast-success { background: #14532d; border-color: #16a34a; color: #4ade80; }
+.toast-error   { background: #450a0a; border-color: #dc2626; color: #f87171; }
+.toast-info    { background: #1e1b4b; border-color: #6366f1; color: #a5b4fc; }
+.toast-warning { background: #451a03; border-color: #d97706; color: #fbbf24; }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+
+.toast.removing {
+  animation: slideOut 0.2s ease-in forwards;
+}
+
+/* Job card selected state */
+.job-card.selected {
+  border-color: rgb(124, 58, 237) !important;
+  background-color: rgba(124, 58, 237, 0.05) !important;
+}
+
+/* Score colors */
+.score-high  { color: #4ade80; }
+.score-mid   { color: #fbbf24; }
+.score-low   { color: #6b7280; }
+
+/* Source badge colors */
+.source-adzuna    { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.source-arbeitnow { background: rgba(16,185,129,0.15); color: #34d399; }
+.source-remoteok  { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+/* Filter button active */
+.filter-btn.active {
+  background: rgb(124, 58, 237) !important;
+  color: white !important;
+}
+
+/* Drag over */
+#drop-zone.drag-over {
+  border-color: rgb(139, 92, 246);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+/* Toggle checkbox fix */
+input[type="checkbox"].sr-only:checked + div {
+  background-color: rgb(124, 58, 237);
+}
+input[type="checkbox"].sr-only:checked + div + div {
+  transform: translateX(16px);
+}
