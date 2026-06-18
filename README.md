@@ -1,4 +1,4 @@
-# Job-Dashboard
+# Job-Dashboard (https://auto-apply-bot--akhilkoppala123.replit.app/)
 AI-powered job application automation tool — upload your resume, search jobs from Adzuna, Arbeitnow &amp; RemoteOK, and auto-apply at scale with AI-generated cover letters.
 
 Features
